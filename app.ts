@@ -1,6 +1,7 @@
 class Memory {
     Heap: ArrayBuffer;
     Stack: ArrayBuffer;
+    Data: Array;
     HeapDataView: DataView;
     StackDataView: DataView;
     CurrentHeapPos: number;
@@ -34,9 +35,17 @@ class Memory {
             Size = 1;
         }
         var TotalSize = 4 + Size * Num;
-        var block = new MemoryBlock(this, this.StackDataView, this.CurrentHeapPos, TotalSize);
+        var block = new MemoryBlock(this, this.StackDataView, this.CurrentStackPos, TotalSize);
         this.CurrentStackPos += TotalSize;
         return block.GetPointer(0);
+    }
+
+    GetStackTop(): number {
+        return this.CurrentStackPos;
+    }
+
+    SetStackTop(top: number): void {
+        this.CurrentStackPos = top;
     }
 }
 
@@ -239,7 +248,9 @@ class Pointer {
 
 }
 
-class Greeter {
+var __Memory: Memory;
+
+class Tester {
     element: HTMLElement;
     span: HTMLElement;
     mem: Memory;
@@ -248,33 +259,128 @@ class Greeter {
         this.element = element;
         this.span = document.createElement('span');
         this.element.appendChild(this.span);
-        this.mem = new Memory(1024, 1024);
+        this.mem = new Memory(1024 * 1024 * 8, 1024 * 1024 * 8);
+        __Memory = this.mem;
     }
 
     println(text: any) {
         this.span.innerText += text.toString() + "\n";
     }
-    
-    start() {
-        var intPtr: Pointer = this.mem.AllocHeap(4);
+
+    exexute(name: string, func: () => void ): void {
+        var t0 = new Date;
+        func.apply(this);
+        var t1 = new Date;
+        var diff = t1.getMilliseconds() - t0.getMilliseconds();
+        this.println(name + "\t" + diff);
+    }
+
+    test1(): void {
+        var intPtr: Pointer = this.mem.AllocStack(4);
         intPtr.SetInt32Value(12345678);
         this.println(intPtr.GetInt32Value());
+        var intPtr2: Pointer = this.mem.AllocStack(4);
+        intPtr2.SetInt32Value(12345678);
+        this.println(intPtr2.GetInt32Value());
 
-        var intPtrPtr: Pointer = this.mem.AllocHeap(8);
+        var intPtrPtr: Pointer = this.mem.AllocStack(8);
         intPtrPtr.SetPointerValue(intPtr);
         this.println(intPtrPtr.GetPointerValue().GetInt32Value());
 
-        var charPtr: Pointer = this.mem.AllocHeap(1);
+        var charPtr: Pointer = this.mem.AllocStack(1);
         charPtr.SetInt8Value(1.2);
         this.println(charPtr.GetInt8Value());
+    }
 
+    test1A(): void {
+        var fibo = function (n) {
+            if (n < 3) {
+                return 1;
+            }
+            return fibo(n - 1) + fibo(n - 2);
+        }
+        this.println(fibo(32));
+    }
+
+    test1B(): void {
+        var fibo = function (__n) {
+            var __stacktop = __Memory.GetStackTop();
+            var n = __Memory.AllocStack(4); n.SetInt32Value(__n);
+            if (n.GetInt32Value() < 3) {
+                var __ret = 1;
+                __Memory.SetStackTop(__stacktop);
+                return __ret;
+            }
+            var __ret = (fibo((n.GetInt32Value() - 1) & 0xFFFFFFFF) + fibo((n.GetInt32Value() - 2) & 0xFFFFFFFF)) & 0xFFFFFFFF;
+            __Memory.SetStackTop(__stacktop);
+            return __ret;
+        }
+        this.println(fibo(32));
+    }
+
+    test2A(): void {
+        var a = [5, 3, 1, 9, 8, 7, 4, 0, 2, 6];
+
+        var swap = (a: number[], i1: number, i2: number) => {
+            var temp = a[i1];
+            a[i1] = a[i2];
+            a[i2] = temp;
+        }
+        var find_min = (a: number[], begin: number): number => {
+            var min_idx = begin;
+            for (var j = begin; j < a.length; j++) {
+                if (a[j] < a[min_idx]) {
+                    min_idx = j;
+                }
+            }
+            return min_idx;
+        }
+
+        var selection_sort = (a: number[]) => {
+            for (var i = 0; i < a.length; i++) {
+                swap(a, i, find_min(a, i));
+            }
+        }
+
+        selection_sort(a);
+    }
+
+    test2B(): void {
+        var a = __Memory.AllocStack(40); //[5, 3, 1, 9, 8, 7, 4, 0, 2, 6];
+
+        var swap = (a: number[], i1: number, i2: number) => {
+            var temp = a[i1];
+            a[i1] = a[i2];
+            a[i2] = temp;
+        }
+        var find_min = (a: number[], begin: number): number => {
+            var min_idx = begin;
+            for (var j = begin; j < a.length; j++) {
+                if (a[j] < a[min_idx]) {
+                    min_idx = j;
+                }
+            }
+            return min_idx;
+        }
+
+        var selection_sort = (a: Pointer) => {
+            for (var i = 0; i < a.length; i++) {
+                swap(a, i, find_min(a, i));
+            }
+        }
+
+        selection_sort(a);
+    }
+
+    start() {
+        this.exexute("test1A", this.test1A);
+        this.exexute("test1B", this.test1B);
     }
 
 }
 
 window.onload = () => {
     var el = document.getElementById('content');
-    var greeter = new Greeter(el);
-    greeter.start();
-    
+    var tester = new Tester(el);
+    tester.start();
 };
