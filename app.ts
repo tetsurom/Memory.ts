@@ -76,6 +76,7 @@ class MemoryBlock {
 class Pointer {
     MemoryBlockRef: MemoryBlock;
     DataViewRef: DataView;
+    Size: number;
     Index: number;
     Offset: number;
 
@@ -84,77 +85,99 @@ class Pointer {
         this.Offset = Offset;
         this.MemoryBlockRef = MemoryBlockRef;
         this.DataViewRef = MemoryBlockRef.DataViewRef;
+        this.Size = this.DataViewRef.getInt32(this.Index);
     }
 
     GetSize(): number {
-        return this.DataViewRef.getInt32(this.Index - 4);
+        return this.Size;
+    }
+
+    CheckRange(Offset: number, Size: number) {
+        if (this.Offset + Offset < 0 || this.Offset + Offset + Size > this.Size) throw new RangeError("Segmentation fault");
     }
 
     GetInt32ValueOffset(Offset: number): number {
+        this.CheckRange(Offset, 4);
         return this.DataViewRef.getInt32(this.Index + this.Offset + 4 + Offset);
     }
 
     SetInt32ValueOffset(Offset: number, Value: number): void {
+        this.CheckRange(Offset, 4);
         this.DataViewRef.setInt32(this.Index + this.Offset + 4 + Offset, Value);
     }
 
     GetUint32ValueOffset(Offset: number): number {
+        this.CheckRange(Offset, 4);
         return this.DataViewRef.getUint32(this.Index + this.Offset + 4 + Offset);
     }
 
     SetUint32ValueOffset(Offset: number, Value: number): void {
+        this.CheckRange(Offset, 4);
         this.DataViewRef.setUint32(this.Index + this.Offset + 4 + Offset, Value);
     }
 
     GetInt16ValueOffset(Offset: number): number {
+        this.CheckRange(Offset, 2);
         return this.DataViewRef.getInt16(this.Index + this.Offset + 4 + Offset);
     }
 
     SetInt16ValueOffset(Offset: number, Value: number): void {
+        this.CheckRange(Offset, 2);
         this.DataViewRef.setInt16(this.Index + this.Offset + 4 + Offset, Value);
     }
 
     GetUint16ValueOffset(Offset: number): number {
+        this.CheckRange(Offset, 2);
         return this.DataViewRef.getUint16(this.Index + this.Offset + 4 + Offset);
     }
 
     SetUint16ValueOffset(Offset: number, Value: number): void {
+        this.CheckRange(Offset, 2);
         this.DataViewRef.setUint16(this.Index + this.Offset + 4 + Offset, Value);
     }
 
     GetInt8ValueOffset(Offset: number): number {
+        this.CheckRange(Offset, 1);
         return this.DataViewRef.getUint8(this.Index + this.Offset + 4 + Offset);
     }
 
     SetInt8ValueOffset(Offset: number, Value: number): void {
+        this.CheckRange(Offset, 1);
         this.DataViewRef.setUint8(this.Index + this.Offset + 4 + Offset, Value);
     }
 
     GetUint8ValueOffset(Offset: number): number {
+        this.CheckRange(Offset, 1);
         return this.DataViewRef.getUint8(this.Index + this.Offset + 4 + Offset);
     }
 
     SetUint8ValueOffset(Offset: number, Value: number): void {
+        this.CheckRange(Offset, 1);
         this.DataViewRef.setUint8(this.Index + this.Offset + 4 + Offset, Value);
     }
 
     GetFloat32ValueOffset(Offset: number): number {
+        this.CheckRange(Offset, 4);
         return this.DataViewRef.getFloat32(this.Index + this.Offset + 4 + Offset);
     }
 
     SetFloat32ValueOffset(Offset: number, Value: number): void {
+        this.CheckRange(Offset, 4);
         this.DataViewRef.setFloat32(this.Index + this.Offset + 4 + Offset, Value);
     }
 
     GetFloat64ValueOffset(Offset: number): number {
+        this.CheckRange(Offset, 8);
         return this.DataViewRef.getFloat64(this.Index + this.Offset + 4 + Offset);
     }
 
     SetFloat64ValueOffset(Offset: number, Value: number): void {
+        this.CheckRange(Offset, 8);
         this.DataViewRef.setFloat64(this.Index + this.Offset + 4 + Offset, Value);
     }
 
     GetPointerValueOffset(Offset: number): Pointer {
+        this.CheckRange(Offset, 8);
         var BeginIndex = this.GetInt32ValueOffset(Offset);
         var _Offset = this.GetInt32ValueOffset(4 + Offset);
         if (BeginIndex == 0 && _Offset == 0) {
@@ -169,6 +192,7 @@ class Pointer {
     }
 
     SetPointerValueOffset(Offset: number, Value: Pointer) {
+        this.CheckRange(Offset, 8);
         if (Value == null) {
             this.SetFloat64ValueOffset(Offset, 0);
         } else {
@@ -182,74 +206,92 @@ class Pointer {
     }
 
     GetInt32Value(): number {
+        this.CheckRange(0, 4);
         return this.DataViewRef.getInt32(this.Index + this.Offset + 4);
     }
 
     SetInt32Value(Value: number): void {
+        this.CheckRange(0, 4);
         this.DataViewRef.setInt32(this.Index + this.Offset + 4, Value);
     }
 
     GetUint32Value(): number {
+        this.CheckRange(0, 4);
         return this.DataViewRef.getUint32(this.Index + this.Offset + 4);
     }
 
     SetUint32Value(Value: number): void {
+        this.CheckRange(0, 4);
         this.DataViewRef.setUint32(this.Index + this.Offset + 4, Value);
     }
 
     GetInt16Value(): number {
+        this.CheckRange(0, 2);
         return this.DataViewRef.getInt16(this.Index + this.Offset + 4);
     }
 
     SetInt16Value(Value: number): void {
+        this.CheckRange(0, 2);
         this.DataViewRef.setInt16(this.Index + this.Offset + 4, Value);
     }
 
     GetUint16Value(): number {
+        this.CheckRange(0, 2);
         return this.DataViewRef.getUint16(this.Index + this.Offset + 4);
     }
 
     SetUint16Value(Value: number): void {
+        this.CheckRange(0, 2);
         this.DataViewRef.setUint16(this.Index + this.Offset + 4, Value);
     }
 
     GetInt8Value(): number {
+        this.CheckRange(0, 1);
         return this.DataViewRef.getUint8(this.Index + this.Offset + 4);
     }
 
     SetInt8Value(Value: number): void {
+        this.CheckRange(0, 1);
         this.DataViewRef.setUint8(this.Index + this.Offset + 4, Value);
     }
 
     GetUint8Value(): number {
+        this.CheckRange(0, 1);
         return this.DataViewRef.getUint8(this.Index + this.Offset + 4);
     }
 
     SetUint8Value(Value: number): void {
+        this.CheckRange(0, 1);
         this.DataViewRef.setUint8(this.Index + this.Offset + 4, Value);
     }
 
     GetFloat32Value(): number {
+        this.CheckRange(0, 4);
         return this.DataViewRef.getFloat32(this.Index + this.Offset + 4);
     }
 
     SetFloat32Value(Value: number): void {
+        this.CheckRange(0, 4);
         this.DataViewRef.setFloat32(this.Index + this.Offset + 4, Value);
     }
 
     GetFloat64Value(): number {
+        this.CheckRange(0, 8);
         return this.DataViewRef.getFloat64(this.Index + this.Offset + 4);
     }
 
     SetFloat64Value(Value: number): void {
+        this.CheckRange(0, 8);
         this.DataViewRef.setFloat64(this.Index + this.Offset + 4, Value);
     }
 
     GetPointerValue(): Pointer {
+        this.CheckRange(0, 8);
         return this.GetPointerValueOffset(0);
     }
 
     SetPointerValue(Value: Pointer) {
+        this.CheckRange(0, 8);
         this.SetPointerValueOffset(0, Value);
     }
 
@@ -271,6 +313,8 @@ class Pointer {
                 length += 1;
             }
         }
+        length += 1; // for '\0'
+        this.CheckRange(0, length);
 
         var typedArray = new Uint8Array(this.DataViewRef.buffer, this.Index + 4, this.MemoryBlockRef.Size), j = 0;
         for (var i = 0; i < n; i++) {
@@ -291,6 +335,12 @@ class Pointer {
             }
         }
         typedArray[j++] = 0;
+    }
+
+    SetFloat64ArrayOffset(Offset: number, Value: number[]) {
+        this.CheckRange(Offset, Value.length * 8);
+        var typedArray = new Float64Array(this.DataViewRef.buffer, this.Index +Offset +4, this.MemoryBlockRef.Size -Offset);
+        typedArray.set(Value, Offset);
     }
 
     InclInt32ValueOffset(Offset: number): number {
@@ -823,8 +873,162 @@ class Tester {
         args.SetPointerValueOffset(8, num);
     }
 
+    //---------------------------------------------------------------------------------------
+    // nbody.c
+    //---------------------------------------------------------------------------------------
+
+//    nbodyA() {
+//        /* The Computer Language Benchmarks Game
+//        * http://benchmarksgame.alioth.debian.org/
+//        *
+//        * contributed by Christoph Bauer
+//        *
+//        */
+
+//        //#include <math.h>
+//        //#include <stdio.h>
+//        //#include <stdlib.h>
+
+//        var pi = 3.141592653589793;
+//        var solar_mass = (4 * pi * pi);
+//        var days_per_year = 365.24;
+///*
+//        struct planet {
+//            double x, y, z;    : 0, 8, 16,
+//            double vx, vy, vz; : 24, 32, 40
+//            double mass;       : 48
+//        };
+//*/
+//        var planet_offsets = {x: 0, y: 8, z: 16, vx: 24, vy: 32, vz: 40, mass: 48};
+//        var sizeof_planet = 56;
+
+//        function advance(nbodies: number, bodies: Pointer, dt: number): void{
+//            var i: number, j: number;
+
+//            for (i = 0; i < nbodies; i++) {
+//                var b = bodies.Add(i*sizeof_planet);
+//                for (j = i +1; j < nbodies; j++) {
+//                    var b2 = bodies.Add(j*sizeof_planet);
+//                    var dx = b.GetFloat64ValueOffset(planet_offsets.x) - b2.GetFloat64ValueOffset(planet_offsets.x);
+//                    var dy = b.GetFloat64ValueOffset(planet_offsets.y) - b2.GetFloat64ValueOffset(planet_offsets.y);
+//                    var dz = b.GetFloat64ValueOffset(planet_offsets.z) - b2.GetFloat64ValueOffset(planet_offsets.z);
+//                    var distance = Math.sqrt(dx * dx +dy * dy +dz * dz);
+//                    var mag = dt / (distance * distance * distance);
+//                    b.SetFloat64ValueOffset(planet_offsets.vx, b.GetFloat64ValueOffset(planet_offsets.vx) - dx * b2.GetFloat64ValueOffset(planet_offsets.mass) * mag);
+//                    b.SetFloat64ValueOffset(planet_offsets.vy, b.GetFloat64ValueOffset(planet_offsets.vy) - dy * b2.GetFloat64ValueOffset(planet_offsets.mass) * mag);
+//                    b.SetFloat64ValueOffset(planet_offsets.vz, b.GetFloat64ValueOffset(planet_offsets.vz) - dz * b2.GetFloat64ValueOffset(planet_offsets.mass) * mag);
+//                    b2.SetFloat64ValueOffset(planet_offsets.vx, b2.GetFloat64ValueOffset(planet_offsets.vx) + dx * b.GetFloat64ValueOffset(planet_offsets.mass) * mag);
+//                    b2.SetFloat64ValueOffset(planet_offsets.vy, b2.GetFloat64ValueOffset(planet_offsets.vy) + dy * b.GetFloat64ValueOffset(planet_offsets.mass) * mag);
+//                    b2.SetFloat64ValueOffset(planet_offsets.vz, b2.GetFloat64ValueOffset(planet_offsets.vz) + dz * b.GetFloat64ValueOffset(planet_offsets.mass) * mag);
+//                }
+//               }
+//            for (i = 0; i < nbodies; i++) {
+//                var b = bodies.Add(i*sizeof_planet);
+//                b2.SetFloat64ValueOffset(planet_offsets.x, b2.GetFloat64ValueOffset(planet_offsets.x) + dt * b.GetFloat64ValueOffset(planet_offsets.vx));
+//                b2.SetFloat64ValueOffset(planet_offsets.y, b2.GetFloat64ValueOffset(planet_offsets.y) + dt * b.GetFloat64ValueOffset(planet_offsets.vy));
+//                b2.SetFloat64ValueOffset(planet_offsets.z, b2.GetFloat64ValueOffset(planet_offsets.z) + dt * b.GetFloat64ValueOffset(planet_offsets.vz));
+//            }
+//        }
+
+//        function energy(nbodies: number, bodies: Pointer): number {
+//            var e: number;
+//            var i: number, j: number;
+
+//            e = 0.0;
+//            for (i = 0; i < nbodies; i++) {
+//                var b = bodies.Add(i*sizeof_planet);
+//                e += 0.5 * b.GetFloat64ValueOffset(planet_offsets.mass) *
+//                    (b.GetFloat64ValueOffset(planet_offsets.vx) * b.GetFloat64ValueOffset(planet_offsets.vx) +
+//                    b.GetFloat64ValueOffset(planet_offsets.vy) * b.GetFloat64ValueOffset(planet_offsets.vy) +
+//                    b.GetFloat64ValueOffset(planet_offsets.vz) * b.GetFloat64ValueOffset(planet_offsets.vz));
+//                for (j = i +1; j < nbodies; j++) {
+//                    var b2 = bodies.Add(j*sizeof_planet);
+//                    var dx = b.GetFloat64ValueOffset(planet_offsets.x) -b2.GetFloat64ValueOffset(planet_offsets.x);
+//                    var dy = b.GetFloat64ValueOffset(planet_offsets.y) -b2.GetFloat64ValueOffset(planet_offsets.y);
+//                    var dz = b.GetFloat64ValueOffset(planet_offsets.z) -b2.GetFloat64ValueOffset(planet_offsets.z);
+//                    var distance = Math.sqrt(dx * dx +dy * dy +dz * dz);
+//                    e -= (b.GetFloat64ValueOffset(planet_offsets.mass) * b2.GetFloat64ValueOffset(planet_offsets.mass)) / distance;
+//                }
+//            }
+//            return e;
+//        }
+
+//        function offset_momentum(nbodies: number, bodies: Pointer): void {
+//            var px = 0.0, py = 0.0, pz = 0.0;
+//            for (var i = 0; i < nbodies; i++) {
+//                var b = bodies.Add(i*sizeof_planet);
+//                px += b.GetFloat64ValueOffset(planet_offsets.vx) * b.GetFloat64ValueOffset(planet_offsets.mass);
+//                py += b.GetFloat64ValueOffset(planet_offsets.vy) * b.GetFloat64ValueOffset(planet_offsets.mass);
+//                pz += b.GetFloat64ValueOffset(planet_offsets.vz) * b.GetFloat64ValueOffset(planet_offsets.mass);
+//            }
+//            bodies.SetFloat64ValueOffset(planet_offsets.vx, -px / solar_mass);
+//            bodies.SetFloat64ValueOffset(planet_offsets.vy, -py / solar_mass);
+//            bodies.SetFloat64ValueOffset(planet_offsets.vz, -pz / solar_mass);
+//        }
+
+//        var NBODIES = 5;
+//        var bodies = __Memory.AllocHeap(NBODIES * sizeof_planet);
+//        bodies = 
+//struct planet bodies[NBODIES]= {
+//{                               /* sun */
+//        0, 0, 0, 0, 0, 0, solar_mass
+//},
+//{                               /* jupiter */
+//        4.84143144246472090e+00,
+//        -1.16032004402742839e+00,
+//        -1.03622044471123109e-01,
+//        1.66007664274403694e-03 * days_per_year,
+//        7.69901118419740425e-03 * days_per_year,
+//        -6.90460016972063023e-05 * days_per_year,
+//        9.54791938424326609e-04 * solar_mass
+//},
+//{                               /* saturn */
+//        8.34336671824457987e+00,
+//        4.12479856412430479e+00,
+//        -4.03523417114321381e-01,
+//        -2.76742510726862411e-03 * days_per_year,
+//        4.99852801234917238e-03 * days_per_year,
+//        2.30417297573763929e-05 * days_per_year,
+//        2.85885980666130812e-04 * solar_mass
+//},
+//{                               /* uranus */
+//        1.28943695621391310e+01,
+//        -1.51111514016986312e+01,
+//        -2.23307578892655734e-01,
+//        2.96460137564761618e-03 * days_per_year,
+//        2.37847173959480950e-03 * days_per_year,
+//        -2.96589568540237556e-05 * days_per_year,
+//        4.36624404335156298e-05 * solar_mass
+//},
+//{                               /* neptune */
+//        1.53796971148509165e+01,
+//        -2.59193146099879641e+01,
+//        1.79258772950371181e-01,
+//        2.68067772490389322e-03 * days_per_year,
+//        1.62824170038242295e-03 * days_per_year,
+//        -9.51592254519715870e-05 * days_per_year,
+//        5.15138902046611451e-05 * solar_mass
+//}
+//};
+
+//int main(int argc, char ** argv)
+//{
+//    int n = atoi(argv[1]);
+//    int i;
+
+//    offset_momentum(NBODIES, bodies);
+//    printf ("%.9f\n", energy(NBODIES, bodies));
+//    for (i = 1; i <= n; i++)
+//        advance(NBODIES, bodies, 0.01);
+//    printf ("%.9f\n", energy(NBODIES, bodies));
+//    return 0;
+//}
+
+//    }
+
     start() {
-        this.exexute("spectralnormA", this.binarytreeA);
+        //this.exexute("spectralnormA", this.binarytreeA);
+        this.exexute("fannkuchreduxA", this.binarytreeA);
         //this.exexute("test1B", this.test1B);
     }
 
