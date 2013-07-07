@@ -776,6 +776,7 @@ var Tester = (function () {
         num.SetCStringValueOffset(0, "2000");
         args.SetPointerValueOffset(8, num);
     };
+<<<<<<< HEAD
     Tester.prototype.start = //---------------------------------------------------------------------------------------
     // nbody.c
     //---------------------------------------------------------------------------------------
@@ -919,6 +920,11 @@ var Tester = (function () {
     function () {
         //this.exexute("spectralnormA", this.binarytreeA);
         this.exexute("fannkuchreduxA", this.binarytreeA);
+=======
+    Tester.prototype.start = function () {
+        this.exexute("spectralnormA", this.binarytreeA);
+        //this.exexute("fannkuchreduxA", this.binarytreeA);
+>>>>>>> 2375522ce25e733aa37117664801909ac9bfdeb4
         //this.exexute("test1B", this.test1B);
             };
     return Tester;
