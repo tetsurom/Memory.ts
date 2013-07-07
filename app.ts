@@ -47,6 +47,10 @@ class Memory {
     SetStackTop(top: number): void {
         this.CurrentStackPos = top;
     }
+
+    Free(p: Pointer): void {
+        //TODO implement free.
+    }
 }
 
 class MemoryBlock {
@@ -151,23 +155,30 @@ class Pointer {
     }
 
     GetPointerValueOffset(Offset: number): Pointer {
-        var BeginIndex = this.GetInt32Value();
-        var Offset = this.GetInt32ValueOffset(4);
+        var BeginIndex = this.GetInt32ValueOffset(Offset);
+        var _Offset = this.GetInt32ValueOffset(4 + Offset);
+        if (BeginIndex == 0 && _Offset == 0) {
+            return null;
+        }
         var MemoryRef = this.MemoryBlockRef.MemoryRef;
         var ByteArrayRef = BeginIndex < 0 ? MemoryRef.Stack : MemoryRef.Heap;
         BeginIndex = BeginIndex < 0 ? -BeginIndex : BeginIndex;
         var Size = new DataView(ByteArrayRef).getInt32(BeginIndex);
         var block = new MemoryBlock(MemoryRef, this.DataViewRef, BeginIndex, Size);
-        return new Pointer(block, Offset);
+        return new Pointer(block, _Offset);
     }
 
     SetPointerValueOffset(Offset: number, Value: Pointer) {
-        var index = Value.MemoryBlockRef.BeginIndex;
-        if (Value.DataViewRef.buffer == Value.MemoryBlockRef.MemoryRef.Stack) {
-            index = -index;
+        if (Value == null) {
+            this.SetFloat64ValueOffset(Offset, 0);
+        } else {
+            var index = Value.MemoryBlockRef.BeginIndex;
+            if (Value.DataViewRef.buffer == Value.MemoryBlockRef.MemoryRef.Stack) {
+                index = -index;
+            }
+            this.SetInt32ValueOffset(Offset, index);
+            this.SetInt32ValueOffset(Offset + 4, Value.Offset);
         }
-        this.SetInt32Value(index);
-        this.SetInt32ValueOffset(Offset + 4, Value.Offset);
     }
 
     GetInt32Value(): number {
@@ -242,6 +253,46 @@ class Pointer {
         this.SetPointerValueOffset(0, Value);
     }
 
+    //GetCStringValueOffset(Offset: number): string {
+    //    //return this.DataViewRef.
+    //}
+
+    SetCStringValueOffset(Offset: number, Value: string) {
+        var length = 0, n = Value.length;
+        for (var i = 0; i < n; i++) {
+            var val = Value.charCodeAt(i);
+            if (val >= 128) {
+                if (val >= 2048) {
+                    length += 3;
+                } else {
+                    length += 2;
+                }
+            } else {
+                length += 1;
+            }
+        }
+
+        var typedArray = new Uint8Array(this.DataViewRef.buffer, this.Index + 4, this.MemoryBlockRef.Size), j = 0;
+        for (var i = 0; i < n; i++) {
+            var val = Value.charCodeAt(i);
+            if (val >= 128) {
+                if (val >= 2048) {
+                    typedArray[j] = ((val >>> 6) | 192);
+                    typedArray[j + 1] = (val & 63) | 128;
+                    j += 2;
+                } else {
+                    typedArray[j] = (val >>> 12) | 224;
+                    typedArray[j + 1] = ((val >>> 6) & 63) | 128;
+                    typedArray[j + 2] = (val & 63) | 128;
+                    j += 3;
+                }
+            } else {
+                typedArray[j++] = val;
+            }
+        }
+        typedArray[j++] = 0;
+    }
+
     Add(n: number): Pointer {
         return new Pointer(this.MemoryBlockRef, this.Offset + n);
     }
@@ -249,6 +300,101 @@ class Pointer {
 }
 
 var __Memory: Memory;
+
+
+// tiny sprintf
+// http://d.hatena.ne.jp/uupaa/20080301/1204380616
+
+if (!(<any>String.prototype).sprintf) {
+    (<any>String.prototype).sprintf = function (args___) {
+        var rv = [], i = 0, v, width, precision, sign, idx, argv = arguments, next = 0;
+        var s = (this + "     ").split(""); // add dummy 5 chars.
+        var unsign = function (val) { return (val >= 0) ? val : val % 0x100000000 + 0x100000000; };
+        var getArg = function () { return argv[idx ? idx - 1 : next++]; };
+
+        for (; i < s.length - 5; ++i) {
+            if (s[i] !== "%") { rv.push(s[i]); continue; }
+
+            ++i, idx = 0, precision = undefined;
+
+            // arg-index-specifier
+            if (!isNaN(parseInt(s[i])) && s[i + 1] === "$") { idx = parseInt(s[i]); i += 2; }
+            // sign-specifier
+            sign = (s[i] !== "#") ? <any>false : ++i, true;
+            // width-specifier
+            width = (isNaN(parseInt(s[i]))) ? 0 : parseInt(s[i++]);
+            // precision-specifier
+            if (s[i] === "." && !isNaN(parseInt(s[i + 1]))) { precision = parseInt(s[i + 1]); i += 2; }
+
+            switch (s[i]) {
+                case "d": v = parseInt(getArg()).toString(); break;
+                case "u": v = parseInt(getArg()); if (!isNaN(v)) { v = unsign(v).toString(); } break;
+                case "o": v = parseInt(getArg()); if (!isNaN(v)) { v = (sign ? "0" : "") + unsign(v).toString(8); } break;
+                case "x": v = parseInt(getArg()); if (!isNaN(v)) { v = (sign ? "0x" : "") + unsign(v).toString(16); } break;
+                case "X": v = parseInt(getArg()); if (!isNaN(v)) { v = (sign ? "0X" : "") + unsign(v).toString(16).toUpperCase(); } break;
+                case "f": v = parseFloat(getArg()).toFixed(precision); break;
+                case "c": width = 0; v = getArg(); v = (typeof v === "number") ? <any>String.fromCharCode(v) : NaN; break;
+                case "s": width = 0; v = getArg().toString(); if (precision) { v = v.substring(0, precision); } break;
+                case "%": width = 0; v = s[i]; break;
+                default: width = 0; v = "%" + ((width) ? width.toString() : "") + s[i].toString(); break;
+            }
+            if (isNaN(v)) { v = v.toString(); }
+            (v.length < width) ? rv.push((<any>" ").repeat(width - v.length), v) : rv.push(v);
+        }
+        return rv.join("");
+    };
+}
+if (!(<any>String.prototype).repeat) {
+    (<any>String.prototype).repeat = function (n) {
+        var rv = [], i = 0, sz = n || 1, s = this.toString();
+        for (; i < sz; ++i) { rv.push(s); }
+        return rv.join("");
+    };
+}
+
+function sprintf(...args: any[]) {
+    var args = []
+    for (var i = 1; i < arguments.length; ++i) {
+        args.push(arguments[i]);
+    }
+    return (<any>String.prototype).sprintf.apply(arguments[0], args);
+}
+
+var printf = function(...args: any[]) {
+    console.log(sprintf.apply(null, arguments));
+}
+
+function isspace(s: Pointer): number {
+    return s.GetInt8Value() == 0x20 ? 1 : 0;
+}
+
+function isdigit(s: Pointer): number {
+    var code = s.GetInt8Value();
+    return (0x30 <= code && code <= 0x39) ? 1 : 0;
+}
+
+function atol(s: Pointer): number
+{
+    while (isspace(s)) {
+        s = s.Add(1);
+    }
+    var sign = 0;
+    switch (s.GetInt8Value()) {
+        case 0x2d /*'-'*/:
+            sign = -1;
+        case 0x2b/*'+'*/:
+            s = s.Add(1);
+            break;
+    }
+    var result;
+    for (result = 0; isdigit(s); s = s.Add(1)) {
+        result = result * 10 + s.GetInt8Value() - 0x30;
+    }
+    if (sign != 0) {
+        result = -result;
+    }
+    return result;
+}
 
 class Tester {
     element: HTMLElement;
@@ -259,8 +405,12 @@ class Tester {
         this.element = element;
         this.span = document.createElement('span');
         this.element.appendChild(this.span);
-        this.mem = new Memory(1024 * 1024 * 8, 1024 * 1024 * 8);
+        this.mem = new Memory(1024 * 1024 * 20, 1024 * 1024 * 8);
         __Memory = this.mem;
+
+        printf = (...args: any[]) => {
+            this.println(sprintf.apply(null, arguments));
+        }
     }
 
     println(text: any) {
@@ -318,63 +468,138 @@ class Tester {
         this.println(fibo(32));
     }
 
-    test2A(): void {
-        var a = [5, 3, 1, 9, 8, 7, 4, 0, 2, 6];
+    //---------------------------------------------------------------------------------------
+    // binarytree.c
+    //---------------------------------------------------------------------------------------
 
-        var swap = (a: number[], i1: number, i2: number) => {
-            var temp = a[i1];
-            a[i1] = a[i2];
-            a[i2] = temp;
-        }
-        var find_min = (a: number[], begin: number): number => {
-            var min_idx = begin;
-            for (var j = begin; j < a.length; j++) {
-                if (a[j] < a[min_idx]) {
-                    min_idx = j;
-                }
+    binarytreeA(): void {
+        /* The Computer Language Benchmarks Game
+         * http://benchmarksgame.alioth.debian.org/
+        
+         contributed by Kevin Carson
+        compilation:
+        gcc -O3 -fomit-frame-pointer -funroll-loops -static binary-trees.c -lm
+        icc -O3 -ip -unroll -static binary-trees.c -lm
+        */
+        /*
+        typedef struct tn {
+            Pointer left; 0
+            Pointer right; 8
+            int          item; 16
+        } treeNode; size 20
+        */
+
+        var NewTreeNode = (left: Pointer, right: Pointer, item: number) => {
+            var node: Pointer;
+
+            node = __Memory.AllocHeap(20);
+
+            node.SetPointerValue(left);
+            node.SetPointerValueOffset(8, right);
+            node.SetInt32ValueOffset(16, item);
+            // node-> left = left;
+            // node-> right = right;
+            // node-> item = item;
+
+            return node;
+        } /* NewTreeNode() */
+
+
+        function ItemCheck(tree: Pointer): number {
+            if (tree.GetPointerValue() === null) {
+                return tree.GetInt32ValueOffset(16);
             }
-            return min_idx;
-        }
+            return tree.GetInt32ValueOffset(16) + ItemCheck(tree.GetPointerValue()) - ItemCheck(tree.GetPointerValueOffset(8));
+        } /* ItemCheck() */
 
-        var selection_sort = (a: number[]) => {
-            for (var i = 0; i < a.length; i++) {
-                swap(a, i, find_min(a, i));
+
+        function BottomUpTree(item: number, depth: number): Pointer {
+            if (depth > 0) {
+                return NewTreeNode(BottomUpTree(2 * item - 1, depth - 1), BottomUpTree(2 * item, depth - 1), item);
             }
-        }
+            return NewTreeNode(null, null, item);
+        } /* BottomUpTree() */
 
-        selection_sort(a);
-    }
 
-    test2B(): void {
-        var a = __Memory.AllocStack(40); //[5, 3, 1, 9, 8, 7, 4, 0, 2, 6];
-
-        var swap = (a: number[], i1: number, i2: number) => {
-            var temp = a[i1];
-            a[i1] = a[i2];
-            a[i2] = temp;
-        }
-        var find_min = (a: number[], begin: number): number => {
-            var min_idx = begin;
-            for (var j = begin; j < a.length; j++) {
-                if (a[j] < a[min_idx]) {
-                    min_idx = j;
-                }
+        function DeleteTree(tree: Pointer): void {
+            if (tree.GetPointerValue() !== null) {
+                DeleteTree(tree.GetPointerValue());
+                DeleteTree(tree.GetPointerValueOffset(8));
             }
-            return min_idx;
-        }
 
-        var selection_sort = (a: Pointer) => {
-            for (var i = 0; i < a.length; i++) {
-                swap(a, i, find_min(a, i));
+            __Memory.Free(tree);
+        } /* DeleteTree() */
+
+        function main(argc: number, argv: Pointer): number {
+            var depth, maxDepth;
+            var N = atol(argv.GetPointerValueOffset(8));
+            var minDepth = 4;
+
+            if ((minDepth + 2) > N) {
+                maxDepth = minDepth + 2;
+            } else {
+                maxDepth = N;
             }
-        }
 
-        selection_sort(a);
+            var stretchDepth = maxDepth + 1;
+            var stretchTree = BottomUpTree(0, stretchDepth);
+            printf(
+                 "stretch tree of depth %u\t check: %d\n",
+                 stretchDepth,
+                 ItemCheck(stretchTree)
+                );
+
+            DeleteTree(stretchTree);
+
+            var longLivedTree = BottomUpTree(0, maxDepth);
+
+            for (depth = minDepth; depth <= maxDepth; depth += 2) {
+                var    i, iterations, check;
+
+                iterations = Math.pow(2, maxDepth - depth + minDepth);
+
+                check = 0;
+
+                for (i = 1; i <= iterations; i++) {
+                    var tempTree = BottomUpTree(i, depth);
+                    check += ItemCheck(tempTree);
+                    DeleteTree(tempTree);
+
+                    tempTree = BottomUpTree(-i, depth);
+                    check += ItemCheck(tempTree);
+                    DeleteTree(tempTree);
+                } /* for(i = 1...) */
+
+                printf(
+                     "%d\t trees of depth %u\t check: %d\n",
+                     iterations * 2,
+                     depth,
+                     check
+                    );
+            } /* for(depth = minDepth...) */
+
+            printf(
+                 "long lived tree of depth %u\t check: %d\n",
+                 maxDepth,
+                 ItemCheck(longLivedTree)
+                );
+
+            return 0;
+        } /* main() */
+
+        var args = __Memory.AllocStack(16);
+
+        var num = __Memory.AllocStack(20);
+
+        num.SetCStringValueOffset(0, "10");
+        args.SetPointerValueOffset(8, num);
+
+        main(2, args);
     }
 
     start() {
-        this.exexute("test1A", this.test1A);
-        this.exexute("test1B", this.test1B);
+        this.exexute("binarytreeA", this.binarytreeA);
+        //this.exexute("test1B", this.test1B);
     }
 
 }
