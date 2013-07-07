@@ -728,6 +728,7 @@ var Tester = (function () {
     };
     Tester.prototype.start = function () {
         this.exexute("spectralnormA", this.binarytreeA);
+        //this.exexute("fannkuchreduxA", this.binarytreeA);
         //this.exexute("test1B", this.test1B);
             };
     return Tester;
