@@ -92,6 +92,8 @@ class SpectralnormTester extends Tester {
 
         num.SetCStringValueOffset(0, "2000");
         args.SetPointerValueOffset(8, num);
+
+        main(2, args);
     }
 
 

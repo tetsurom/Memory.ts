@@ -158,5 +158,7 @@ class NBodyTester extends Tester {
 
         num.SetCStringValueOffset(0, "20000");
         args.SetPointerValueOffset(8, num);
+
+        main(2, args);
     }
 }

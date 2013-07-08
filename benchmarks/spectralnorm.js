@@ -97,6 +97,8 @@ var SpectralnormTester = (function (_super) {
 
         num.SetCStringValueOffset(0, "2000");
         args.SetPointerValueOffset(8, num);
+
+        main(2, args);
     };
     return SpectralnormTester;
 })(Tester);

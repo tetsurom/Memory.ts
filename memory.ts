@@ -340,7 +340,7 @@ class Pointer {
     SetFloat64ArrayOffset(Offset: number, Value: number[]) {
         this.CheckRange(Offset, Value.length * 8);
         for (var i = 0; i < Value.length; i++) {
-            this.SetFloat32ValueOffset(i * 8, Value[i]);
+            this.SetFloat32ValueOffset(Offset + i * 8, Value[i]);
         }
     }
 

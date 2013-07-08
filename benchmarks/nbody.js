@@ -160,6 +160,8 @@ var NBodyTester = (function (_super) {
 
         num.SetCStringValueOffset(0, "20000");
         args.SetPointerValueOffset(8, num);
+
+        main(2, args);
     };
     return NBodyTester;
 })(Tester);
