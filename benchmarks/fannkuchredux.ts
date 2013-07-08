@@ -45,7 +45,7 @@ class FannkuchreduxTester extends Tester {
             }
             i = 1;
             do {
-                for (x = t, y = t + t[0]; x < y;) {
+                for (x = t, y = t.Add(t.GetInt32Value() * 4); x.Offset < y.Offset;) {
                     //c = * x, * x++ = * y, * y-- = c;
                     c = x.GetInt32Value();
                     x.SetInt32Value((y.GetInt32Value()));
@@ -73,13 +73,16 @@ class FannkuchreduxTester extends Tester {
         /* Tompkin-Paige iterative perm generation */
         function tk(n: number): void {
             var __stacktop = __Memory.GetStackTop();
-            var i = 0, f;
+            var i = 0, f: number;
             //int c[16] = { 0 };
             var c = __Memory.AllocStack(4 * 16);
+            for (var k = 0; k < 16; ++k) {
+                c.SetInt32ValueOffset(k * 4, 0);
+            }
 
             while (i < n) {
                 rotate(i);
-                if (c.GetInt16ValueOffset(i) >= i) {
+                if (c.GetInt32ValueOffset(i) >= i) {
                     c.SetInt32ValueOffset(i++, 0);
                     continue;
                 }
@@ -99,8 +102,6 @@ class FannkuchreduxTester extends Tester {
         }
 
         function main(argc: number, v: Pointer): number {
-            var i;
-
             if (argc < 2) {
                 printf("usage: %s number\n", v.GetPointerValue());
                 return 1;
@@ -112,7 +113,7 @@ class FannkuchreduxTester extends Tester {
                 return 1;
             }
 
-            for (i = 0; i < max_n; i++) {
+            for (var i = 0; i < max_n; i++) {
                 s.SetInt32ValueOffset(i, i);
             }
             tk(max_n);

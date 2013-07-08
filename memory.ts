@@ -360,6 +360,9 @@ class Pointer {
         return new Pointer(this.MemoryBlockRef, this.Offset + n);
     }
 
+    Clone(): Pointer {
+        return this.Add(0);
+    }
 }
 
 var __Memory: Memory;

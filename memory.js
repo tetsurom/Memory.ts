@@ -335,6 +335,10 @@ var Pointer = (function () {
     Pointer.prototype.Add = function (n) {
         return new Pointer(this.MemoryBlockRef, this.Offset + n);
     };
+
+    Pointer.prototype.Clone = function () {
+        return this.Add(0);
+    };
     return Pointer;
 })();
 
