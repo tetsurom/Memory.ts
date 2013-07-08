@@ -18,12 +18,40 @@
   <ItemGroup>
     <Content Include="app.css" />
     <Content Include="default.htm" />
-    <Content Include="app.js">
-      <DependentUpon>app.ts</DependentUpon>
+    <Content Include="memory.js">
+      <DependentUpon>memory.ts</DependentUpon>
     </Content>
+    <Content Include="benchmarks\binarytree.js">
+      <DependentUpon>binarytree.ts</DependentUpon>
+    </Content>
+    <Content Include="benchmarks\fannkuchredux.js">
+      <DependentUpon>fannkuchredux.ts</DependentUpon>
+    </Content>
+    <Content Include="benchmarks\fasta.js">
+      <DependentUpon>fasta.ts</DependentUpon>
+    </Content>
+    <Content Include="benchmarks\mandelbrot.js">
+      <DependentUpon>mandelbrot.ts</DependentUpon>
+    </Content>
+    <Content Include="benchmarks\nbody.js">
+      <DependentUpon>nbody.ts</DependentUpon>
+    </Content>
+    <Content Include="benchmarks\spectralnorm.js">
+      <DependentUpon>spectralnorm.ts</DependentUpon>
+    </Content>
+    <Content Include="main.js">
+      <DependentUpon>main.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="main.ts" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="app.ts" />
+    <TypeScriptCompile Include="memory.ts" />
+    <TypeScriptCompile Include="benchmarks\binarytree.ts" />
+    <TypeScriptCompile Include="benchmarks\fannkuchredux.ts" />
+    <TypeScriptCompile Include="benchmarks\fasta.ts" />
+    <TypeScriptCompile Include="benchmarks\mandelbrot.ts" />
+    <TypeScriptCompile Include="benchmarks\nbody.ts" />
+    <TypeScriptCompile Include="benchmarks\spectralnorm.ts" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="web.config" />
